@@ -38,10 +38,10 @@ A native Discord bot running on an ESP32 using WebSockets. This project allows y
 
 2. **Configuration**:
 * Open the `config.h` file and update the following variables:
-* `BOT_TOKEN`: Your Discord Bot Token.
-* `WIFI_SSID`: Your WiFi SSID.
-* `WIFI_PASSWORD`: Your WiFi Password.
-* `BOT_NAME`: What name do you want displayed on the OLED.
+* `token`: Your Discord Bot Token.
+* `wifiName`: Your WiFi SSID.
+* `wifiPassword`: Your WiFi Password.
+* `botName`: What name do you want displayed on the OLED.
 
 
 
