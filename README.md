@@ -2,6 +2,9 @@
 
 A native Discord bot running on an ESP32 using WebSockets. This project allows you to host a functional Discord bot on a microcontroller without needing a 24/7 PC or a VPS. It also features optional real-time status updates on an SSD1306 OLED display.
 
+> [!NOTE] 
+> This project has been developed and tested specifically on the ESP32 DevKit V1. While it may work on other ESP32 variants, pin layouts and compatibility have not been verified.
+
 ## Features
 
 * **Native WebSockets**: Connects directly to the Discord Gateway (v10).
