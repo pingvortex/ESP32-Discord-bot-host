@@ -19,7 +19,7 @@ A native Discord bot running on an ESP32 using WebSockets. This project allows y
 
 ## Bot Commands
 
-* `>:test` - Checks if the bot is responding.
+* `>:test` - Checks if the bot is responding and see some stats.
 * `>:ping` - Measures the latency of the ESP32.
 * `>:say <message>` - Makes the bot echo text.
 * `>:flip` - Flips a coin.
@@ -32,10 +32,11 @@ A native Discord bot running on an ESP32 using WebSockets. This project allows y
 
 
 2. **Configuration**:
-* Open the `.ino` file and update the following variables:
-* `token`: Your Discord Bot Token.
-* `wifiName`: Your WiFi SSID.
-* `wifiPassword`: Your WiFi Password.
+* Open the `config.h` file and update the following variables:
+* `BOT_TOKEN`: Your Discord Bot Token.
+* `WIFI_SSID`: Your WiFi SSID.
+* `WIFI_PASSWORD`: Your WiFi Password.
+* `BOT_NAME`: What name do you want displayed on the OLED.
 
 
 
