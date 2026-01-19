@@ -17,6 +17,10 @@ A native Discord bot running on an ESP32 using WebSockets. This project allows y
 * **ESP32**
 * **SSD1306 128x64 I2C OLED** (Optional)
 
+### What did I exactly use?
+* **ESP32 DEVKIT V1 (ESP-WROOM-32)**
+* **IIC I2C OLED display 0,96" - White, 128 x 64**
+
 ## Bot Commands
 
 * `>:test` - Checks if the bot is responding and see some stats.
