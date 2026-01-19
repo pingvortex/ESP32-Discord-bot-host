@@ -1,9 +1,9 @@
 /*
  * ----------------------------------------------------------------------------
- * Project: ESP32 Discord bot host
+ * Project: ESP32 Discord bot
  * Author:  PingVortex
  * Website: https://www.pingvortex.com
- * Source:  https://github.com/pingvortex/ESP32-Discord-bot-host
+ * Source:  https://github.com/pingvortex/ESP32-Discord-bot
 
  * * License:  Creative Commons Attribution-NonCommercial-ShareAlike 4.0 
  * (CC BY-NC-SA 4.0)
@@ -29,6 +29,14 @@
 #include <WebSockets2_Generic.h>
 #include <ArduinoJson.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+uint8_t temprature_sens_read();
+#ifdef __cplusplus
+}
+#endif
+
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
@@ -44,7 +52,7 @@ bool isConnected = false;
 DynamicJsonDocument doc(3072);
 
   // --- SETTINGS ---
-  const char* token = "YOUR_BOT_TOKEN"; // YOUR BOT TOKEN
+  const char* token = "TOKEN"; // YOUR BOT TOKEN
 
   String wifiName = "SSID"; // YOUR WIFI NAME/SSID
   String wifiPassword = "PASSWORD"; // YOUR WIFI PASSWORD
@@ -99,6 +107,32 @@ long sendMessage(const char* channelId, String content) {
     return millis() - startSend;
 }
 
+void sendEmbed(const char* channelId, String title, String description, uint32_t color) {
+    WiFiClientSecure httpsClient;
+    httpsClient.setInsecure();
+    HTTPClient http;
+    String url = "https://discord.com/api/v10/channels/" + String(channelId) + "/messages";
+
+    if (http.begin(httpsClient, url)) {
+        http.addHeader("Authorization", "Bot " + String(token));
+        http.addHeader("Content-Type", "application/json");
+
+        StaticJsonDocument<1024> embedDoc;
+        JsonArray embeds = embedDoc.createNestedArray("embeds");
+        JsonObject embed = embeds.createNestedObject();
+        
+        embed["title"] = title;
+        embed["description"] = description;
+        embed["color"] = color;
+        
+        String payload;
+        serializeJson(embedDoc, payload);
+        
+        http.POST(payload);
+        http.end();
+    }
+}
+
 void onMessageCallback(WebsocketsMessage message) {
     if (message.length() > 2500) return;
 
@@ -113,35 +147,63 @@ void onMessageCallback(WebsocketsMessage message) {
 
         if (content && !isBot) {
             String msg = String(content);
-            
+
+
             // --- >:test ---
             if (msg.indexOf(">:test") >= 0) {
-                updateDisplay("CMD: test");
-                sendMessage(channelId, "im working :scream:");
+                updateDisplay("CMD: Test");
+
+                unsigned long totalSeconds = millis() / 1000;
+                unsigned long days = totalSeconds / 86400;
+                unsigned long hours = (totalSeconds % 86400) / 3600;
+                unsigned long minutes = (totalSeconds % 3600) / 60;
+                unsigned long seconds = totalSeconds % 60;
+
+                // temp
+                float temp_c = (temprature_sens_read() - 32) / 1.8; 
+                
+                // memory usage
+                uint32_t freeHeap = ESP.getFreeHeap();
+                uint32_t totalHeap = ESP.getHeapSize();
+                float usagePercent = 100.0 * (1.0 - ((float)freeHeap / (float)totalHeap));
+
+                String runtime = String(days) + "d " + String(hours) + "h " + String(minutes) + "m " + String(seconds) + "s";
+                
+                // send normal message
+                long latency = sendMessage(channelId, "im working :scream:");
+
+                // send embed
+                String embedDesc = "**System Info:**\n";
+                embedDesc += "**Ping:** " + String(latency) + "ms\n";
+                embedDesc += "**Memory Usage:** " + String(usagePercent, 1) + "% (" + String(freeHeap/1024) + " KB free)\n";
+                embedDesc += "**Internal Temp:** " + String(temp_c, 1) + " °C\n";
+                embedDesc += "**Uptime:** " + runtime;
+
+                sendEmbed(channelId, "Bot Status", embedDesc, 5763719); 
             }
             
             // --- >:ping ---
             else if (msg.indexOf(">:ping") >= 0) {
-                updateDisplay("CMD: pinging...");
+                updateDisplay("CMD: Pinging...");
                 long latency = sendMessage(channelId, "im a slow clanka pls wait...");
                 
-                String result = "my clanka latency: " + String(latency) + "ms";
-                sendMessage(channelId, result);
+                String result = "**Latency:** " + String(latency) + "ms";
+                sendEmbed(channelId, "Pong!", result, 16711680);
                 updateDisplay(String(latency) + "ms");
             }
 
-          // --- >:say ---
+            // --- >:say ---
             else if (msg.startsWith(">:say ")) {
                 String note = msg.substring(6);
                 updateDisplay("DISCORD MSG", note);
                 sendMessage(channelId, note);
             }
 
-          // --- >:flip ---
+            // --- >:flip ---
             else if (msg.indexOf(">:flip") >= 0) {
                 String side = (random(0, 2) == 0) ? "Heads" : "Tails";
                 sendMessage(channelId, "Result: " + side);
-                updateDisplay("flipped: " + side);
+                updateDisplay("Flipped: " + side);
             }
 
         }
@@ -152,7 +214,7 @@ void onMessageCallback(WebsocketsMessage message) {
         heartbeatInterval = doc["d"]["heartbeat_interval"];
         identify();
         isConnected = true;
-        updateDisplay("online");
+        updateDisplay("Online");
     }
 }
 
@@ -163,17 +225,27 @@ void setup() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     
-    updateDisplay("connecting to wifi");
+    updateDisplay("Connecting to WiFi...");
     WiFi.begin(wifiName.c_str(), wifiPassword.c_str());
     while (WiFi.status() != WL_CONNECTED) delay(500);
 
-    updateDisplay("connecting to discord");
+    updateDisplay("Connecting to Discord...");
     client.onMessage(onMessageCallback);
     client.setInsecure(); 
     client.connect("wss://gateway.discord.gg/?v=10&encoding=json");
 }
 
 void loop() {
+
+    // handle disconnects
+    if (!client.available()) {
+        isConnected = false;
+        updateDisplay("Reconnecting...");
+        client.connect("wss://gateway.discord.gg/?v=10&encoding=json");
+        delay(2000); // prevent spamming 
+        return;
+    }
+
     client.poll();
 
     if (isConnected && (millis() - lastHeartbeat > heartbeatInterval)) {
