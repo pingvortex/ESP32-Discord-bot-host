@@ -28,6 +28,7 @@
 #define WEBSOCKETS_NETWORK_TYPE NETWORK_ESP32
 #include <WebSockets2_Generic.h>
 #include <ArduinoJson.h>
+#include "config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,13 +51,6 @@ unsigned long heartbeatInterval = 40000;
 bool isConnected = false;
 
 DynamicJsonDocument doc(3072);
-
-  // --- SETTINGS ---
-  const char* token = "TOKEN"; // YOUR BOT TOKEN
-
-  String wifiName = "SSID"; // YOUR WIFI NAME/SSID
-  String wifiPassword = "PASSWORD"; // YOUR WIFI PASSWORD
-  String botName = "BOT"; // WHAT NAME DO YOU WANT TO BE DISPLAYED ON THE DISPLAY (Can be left as BOT) 
 
 void updateDisplay(String status, String lastMsg = "") {
     display.clearDisplay();
